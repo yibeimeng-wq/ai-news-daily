@@ -1,0 +1,42 @@
+name: AI Daily News Summary
+
+on:
+  schedule:
+    # Run at 9:00 AM Beijing time (1:00 AM UTC) every day
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  fetch-and-push-news:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install requests openai
+    
+    - name: Run AI news summary
+      env:
+        BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+        FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        FEISHU_KEYWORD: ${{ secrets.FEISHU_KEYWORD }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+      run: |
+        python ai_news_daily.py
+    
+    - name: Upload report as artifact
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: news-report
+        path: ai_news_summary_*.md
+        retention-days: 7

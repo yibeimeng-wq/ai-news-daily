@@ -1,0 +1,21 @@
+# Python 缓存文件
+__pycache__/
+*.pyc
+
+# 每日生成的报告（不需要上传，GitHub Actions 会自动生成）
+ai_news_summary_*.md
+
+# 锁文件（本地使用）
+.ai_news_lock
+
+# IDE 编辑器文件
+.vscode/
+.idea/
+
+# 操作系统文件
+.DS_Store
+
+# 密钥文件（防止意外上传）
+*.env
+.env
+secrets.json

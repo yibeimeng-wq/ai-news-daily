@@ -24,7 +24,12 @@ except ImportError:
     print("警告: 飞书推送模块未找到，将跳过飞书推送功能")
 
 # Configuration - Read from environment variables for GitHub Actions
-BRAVE_API_KEY = os.getenv("BRAVE_API_KEY", "BSAoSBQpdOGtvYY8qJDmwqjGVL2wa29")
+BRAVE_API_KEY = os.getenv("BRAVE_API_KEY" )
+if not BRAVE_API_KEY:
+    print("❌ 错误: BRAVE_API_KEY 环境变量未设置")
+    print("💡 请在 GitHub Secrets 中配置 BRAVE_API_KEY")
+    sys.exit(1)
+
 BRAVE_BASE_URL = "https://api.search.brave.com/res/v1/web/search"
 LOCK_FILE = os.getenv("LOCK_FILE", ".ai_news_lock")
 

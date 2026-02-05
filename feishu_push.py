@@ -10,8 +10,13 @@ import os
 from datetime import datetime
 
 # Feishu webhook URL - Read from environment variable for GitHub Actions
-FEISHU_WEBHOOK = os.getenv("FEISHU_WEBHOOK", "https://open.feishu.cn/open-apis/bot/v2/hook/ea8f9b27-2046-4977-9588-5df48d2b5285")
-FEISHU_KEYWORD = os.getenv("FEISHU_KEYWORD", "dailynews")
+FEISHU_WEBHOOK = os.getenv("FEISHU_WEBHOOK")
+FEISHU_KEYWORD = os.getenv("FEISHU_KEYWORD")
+
+if not FEISHU_WEBHOOK:
+    raise ValueError("FEISHU_WEBHOOK environment variable is not set")
+if not FEISHU_KEYWORD:
+    raise ValueError("FEISHU_KEYWORD environment variable is not set")
 
 def send_text_message(text):
     """

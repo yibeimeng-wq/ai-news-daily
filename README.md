@@ -29,7 +29,7 @@ Add the following secrets:
 
 | Secret Name | Description | Example Value |
 |------------|-------------|---------------|
-| `BRAVE_API_KEY` | Your Brave Search API key | `BSAoSBQpdOGtvYY8qJDmwqjGVL2wa29` |
+| `BRAVE_API_KEY` | Your Brave Search API key | `` |
 | `FEISHU_WEBHOOK` | Your Feishu bot webhook URL | `https://open.feishu.cn/open-apis/bot/v2/hook/...` |
 | `FEISHU_KEYWORD` | Feishu bot security keyword | `dailynews` |
 | `OPENAI_API_KEY` | OpenAI API key (provided by Manus) | `sk-...` |

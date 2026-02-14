@@ -18,147 +18,53 @@ if not FEISHU_WEBHOOK:
 if not FEISHU_KEYWORD:
     raise ValueError("FEISHU_KEYWORD environment variable is not set")
 
+
 def send_text_message(text):
-    """
-    Send simple text message to Feishu
-    
-    Args:
-        text: Text content to send
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
+    """ Send simple text message to Feishu """
+    headers = {"Content-Type": "application/json"}
     payload = {
         "msg_type": "text",
-        "content": {
-            "text": f"{FEISHU_KEYWORD}\n\n{text}"
-        }
+        "content": {"text": f"{FEISHU_KEYWORD} {text}"}
     }
-    
     try:
         response = requests.post(FEISHU_WEBHOOK, headers=headers, json=payload, timeout=10)
-        result = response.json()
-        
-        if result.get("code") == 0:
-            return True
-        else:
-            print(f"飞书推送失败: {result}")
-            return False
+        return response.json().get("code") == 0
     except Exception as e:
-        print(f"飞书推送异常: {type(e).__name__}: {str(e)}")
+        print(f"飞书推送异常: {e}")
         return False
 
-def send_rich_text_message(title, content_lines):
-    """
-    Send rich text message to Feishu
-    
-    Args:
-        title: Message title
-        content_lines: List of content lines
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
-    # Build rich text content
-    content = [[{"tag": "text", "text": title, "style": ["bold"]}]]
-    
-    for line in content_lines:
-        content.append([{"tag": "text", "text": line}])
-    
-    payload = {
-        "msg_type": "post",
-        "content": {
-            "post": {
-                "zh_cn": {
-                    "title": title,
-                    "content": content
-                }
-            }
-        }
-    }
-    
-    try:
-        response = requests.post(FEISHU_WEBHOOK, headers=headers, json=payload, timeout=10)
-        result = response.json()
-        
-        if result.get("code") == 0:
-            return True
-        else:
-            print(f"飞书推送失败: {result}")
-            return False
-    except Exception as e:
-        print(f"飞书推送异常: {type(e).__name__}: {str(e)}")
-        return False
 
 def send_interactive_card(summary_data):
-    """
-    Send interactive card message to Feishu
+    """ Send interactive card message to Feishu """
+    headers = {"Content-Type": "application/json"}
     
-    Args:
-        summary_data: Dictionary containing:
-            - date: Date string
-            - article_count: Number of articles
-            - highlights: List of highlight news
-            - categories: Dictionary of categorized news
-            - report_file: Path to full report file
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
-    # Build card elements
     elements = []
     
     # Header section
     elements.append({
         "tag": "markdown",
-        "content": f"**📅 日期**: {summary_data.get('date', '')}\n**📊 文章数量**: {summary_data.get('article_count', 0)} 篇"
+        "content": f"**📅 周度**: {summary_data.get('date', '')} **📊 文章数量**: {summary_data.get('article_count', 0)} 篇"
     })
-    
     elements.append({"tag": "hr"})
     
-    # Highlights section
-    if summary_data.get('highlights'):
-        highlights_text = "**🔥 今日要闻**\n\n"
-        for i, highlight in enumerate(summary_data['highlights'][:5], 1):
-            highlights_text += f"{i}. {highlight}\n"
-        
-        elements.append({
-            "tag": "markdown",
-            "content": highlights_text
-        })
-        
-        elements.append({"tag": "hr"})
-    
-    # Categories section
+    # Categories section - 一级分类 + 二级分类
     if summary_data.get('categories'):
-        for category, items in summary_data['categories'].items():
-            if items:
-                category_text = f"**{category}**\n\n"
-                for item in items[:3]:  # Limit to 3 items per category
-                    category_text += f"• {item}\n"
-                
-                elements.append({
-                    "tag": "markdown",
-                    "content": category_text
-                })
+        for primary_cat, secondary_cats in summary_data['categories'].items():
+            for sec_cat, items in secondary_cats.items():
+                if items:
+                    cat_text = f"**{primary_cat} {sec_cat}**\n"
+                    for item in items[:5]:  # Limit 5 items per category
+                        cat_text += f"• {item}\n"
+                    elements.append({
+                        "tag": "markdown",
+                        "content": cat_text.strip()
+                    })
     
     # Footer
     elements.append({"tag": "hr"})
     elements.append({
         "tag": "markdown",
-        "content": "*📄 完整报告已保存，可通过系统查看*\n*🤖 本消息由 AI 每日新闻摘要系统自动推送*"
+        "content": "*📄 完整报告已保存*\n*🤖 AI 每周新闻摘要系统自动推送*"
     })
     
     payload = {
@@ -167,7 +73,7 @@ def send_interactive_card(summary_data):
             "header": {
                 "title": {
                     "tag": "plain_text",
-                    "content": "📰 AI dailynews 每日新闻摘要"
+                    "content": "📰 AI 周度新闻摘要"
                 },
                 "template": "blue"
             },
@@ -177,91 +83,76 @@ def send_interactive_card(summary_data):
     
     try:
         response = requests.post(FEISHU_WEBHOOK, headers=headers, json=payload, timeout=10)
-        result = response.json()
-        
-        if result.get("code") == 0:
-            return True
-        else:
-            print(f"飞书推送失败: {result}")
-            return False
+        return response.json().get("code") == 0
     except Exception as e:
-        print(f"飞书推送异常: {type(e).__name__}: {str(e)}")
+        print(f"飞书推送异常: {e}")
         return False
 
+
 def send_news_summary(date, article_count, summary_text, report_file=None):
-    """
-    Send AI news summary to Feishu (simplified version)
-    
-    Args:
-        date: Date string
-        article_count: Number of articles
-        summary_text: Summary text content
-        report_file: Path to full report file (optional)
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    # Parse summary to extract highlights
-    highlights = []
+    """ Send AI news summary to Feishu """
+    # Parse new format: 一级分类 + 二级分类
     categories = {}
+    current_primary = None
+    current_secondary = None
     
     lines = summary_text.split('\n')
-    current_section = None
-    
     for line in lines:
         line = line.strip()
         if not line:
             continue
         
-        # Extract highlights
-        if '【今日要闻】' in line or '今日要闻' in line:
-            current_section = 'highlights'
+        # Detect 一级分类
+        if '🇨🇳' in line or '中国' in line:
+            current_primary = "🇨🇳 中国"
+            categories[current_primary] = {}
+            continue
+        if '🇺🇸' in line or '美国' in line:
+            current_primary = "🇺🇸 美国"
+            categories[current_primary] = {}
+            continue
+        if '🌍' in line and ('其他' in line or '欧洲' in line or '亚洲' in line):
+            current_primary = "🌍 其他"
+            categories[current_primary] = {}
             continue
         
-        # Extract category headers
-        if line.startswith('🚀') or line.startswith('💼') or line.startswith('🔬') or \
-           line.startswith('📊') or line.startswith('⚖️') or line.startswith('🌍'):
-            current_section = line
-            categories[current_section] = []
+        # Detect 二级分类
+        if any(x in line for x in ['🚀', '💼', '🔬', '📊', '⚖️', '🌍']):
+            if current_primary:
+                current_secondary = line.split('.')[0].strip() if '.' in line else line
+                categories[current_primary][current_secondary] = []
             continue
         
-        # Extract content
-        if current_section == 'highlights' and (line[0].isdigit() or line.startswith('-')):
-            # Remove numbering
-            content = line.lstrip('0123456789.- ')
-            if content:
-                highlights.append(content)
-        elif current_section and current_section != 'highlights':
-            if line.startswith('-') or line.startswith('•'):
-                content = line.lstrip('-• ')
-                if content and len(content) > 10:  # Filter out short lines
-                    categories[current_section].append(content)
+        # Extract news items
+        if current_primary and current_secondary:
+            # Skip numbering lines
+            if line and not line.startswith('#') and len(line) > 20:
+                # Clean up the line but keep the link
+                cleaned = line.lstrip('0123456789.- ')
+                if cleaned and '来源:' not in cleaned:  # Don't add source lines as items
+                    categories[current_primary][current_secondary].append(cleaned)
     
-    # Build summary data
     summary_data = {
         'date': date,
         'article_count': article_count,
-        'highlights': highlights,
         'categories': categories,
         'report_file': report_file
     }
     
-    # Send interactive card
     return send_interactive_card(summary_data)
 
+
 def test_feishu_connection():
-    """
-    Test Feishu webhook connection
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    test_message = f"✅ 飞书机器人连接测试成功！\n\n🤖 AI 每日新闻摘要系统已配置完成\n⏰ 每天早上 9:00 自动推送\n📱 您将在此群组收到最新的 AI 新闻摘要\n\n测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    
+    """ Test Feishu webhook connection """
+    test_message = f"""✅ 飞书机器人连接测试成功！
+🤖 AI 每周新闻摘要系统已配置完成
+⏰ 每周一早上 9:00 自动推送
+📱 您将在此群组收到最新的 AI 新闻摘要
+测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
     return send_text_message(test_message)
 
+
 if __name__ == "__main__":
-    # Test the connection
     print("正在测试飞书机器人连接...")
     if test_feishu_connection():
         print("✅ 飞书机器人连接测试成功！")

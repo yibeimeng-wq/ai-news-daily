@@ -1,9 +1,11 @@
-name: AI Daily News Summary
+name: AI Weekly News Summary
 
 on:
-# schedule:
-#   # Run at 9:00 AM Beijing time (1:00 AM UTC) every day
-#   - cron: '0 1 * * *'
+  schedule:
+    # Run at 9:00 AM Beijing time (1:00 AM UTC) every Monday
+    # Format: minute hour day month weekday
+    # 0 1 * * 1 = Every Monday at 1:00 AM UTC = 9:00 AM Beijing
+    - cron: '0 1 * * 1'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:

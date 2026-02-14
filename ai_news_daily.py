@@ -321,70 +321,84 @@ def fetch_ai_news(query="artificial intelligence AI news", count=20, freshness="
         return []
 
 def categorize_and_summarize_news(articles):
-    """
-    Use LLM to categorize and summarize AI news articles
-    
-    Args:
-        articles: List of article dictionaries
-    
-    Returns:
-        Structured summary with categories and key points
-    """
+    """ Use LLM to categorize and summarize AI news articles """
     if not articles:
         return None
-    
-    # Prepare article text for LLM
+
     articles_text = ""
-    for i, article in enumerate(articles[:20], 1):  # Limit to top 20 articles
-        articles_text += f"\n{i}. 标题: {article['title']}\n"
-        articles_text += f"   描述: {article['description']}\n"
-        articles_text += f"   时间: {article.get('age', '未知')}\n"
-        articles_text += f"   来源: {article['url']}\n"
-    
-    prompt = f"""你是一位专业的 AI 行业分析师。请分析以下今日的 AI 新闻，并生成一份结构化的每日新闻摘要。
+    for i, article in enumerate(articles[:20], 1):
+        articles_text += f"[{i}] 标题: {article['title']}\n"
+        articles_text += f"    链接: {article['url']}\n"
+        articles_text += f"    描述: {article['description']}\n\n"
 
-要求：
-1. 将新闻分为以下几个类别（如果适用）：
-   - 🚀 重大突破与产品发布
-   - 💼 商业动态与投资
-   - 🔬 研究进展
-   - 📊 行业趋势与分析
-   - ⚖️ 政策法规
-   - 🌍 社会影响
+    prompt = f"""你是一位专业的 AI 行业分析师。请分析以下 AI 新闻，并生成一份结构化的周度新闻摘要。
 
-2. 每个类别下：
-   - 提取 2-4 条最重要的新闻
-   - 用简洁的中文概括要点（每条 1-2 句话）
-   - 保留原文标题的关键信息
-   - 标注信息来源（使用文章编号）
+## 一级分类
+将所有新闻分为三个地理区域：
+- 🇨🇳 **中国** - 中国公司、机构、政府的新闻
+- 🇺🇸 **美国** - 美国公司、机构、政府（不含中国）的新闻
+- 🌍 **其他** - 其他国家和地区的新闻
 
-3. 在摘要开头提供"今日要闻"部分，列出 3-5 条最重要的新闻
+## 二级分类
+在每个一级分类下，再按以下主题分类：
+- 🚀 **重大突破与产品发布**
+- 💼 **商业动态与投资**
+- 🔬 **研究进展**
+- 📊 **行业趋势与分析**
+- ⚖️ **政策法规**
+- 🌍 **社会影响**
 
-4. 使用专业但易懂的语言，适合技术从业者和决策者阅读
+## 新闻格式要求
+每条新闻必须包含：
+1. 序号
+2. 标题（中文概括）
+3. 核心要点（1-2 句话）
+4. **来源**: [原始标题](原始URL) - 必须带完整链接
 
-今日 AI 新闻文章：
+## 完整格式示例
+### 🇨🇳 中国
+
+#### 🚀 重大突破与产品发布
+**1. 字节跳动发布新版 AI 助手**
+- 新版助手在中文理解和多轮对话方面有显著提升
+- **来源**: [字节跳动官方公告](https://www.bytedance.com/news/xxx)
+
+#### 💼 商业动态与投资
+**2. 阿里云完成新一轮融资**
+- 估值突破 500 亿人民币，资金将用于 AI 基础设施建设
+- **来源**: [36氪报道](https://36kr.com/news/xxx)
+
+### 🇺🇸 美国
+
+#### 🚀 重大突破与产品发布
+**1. OpenAI 发布 GPT-5 预览版**
+- 新模型在推理能力和多模态理解方面有突破性进展
+- **来源**: [OpenAI Blog](https://openai.com/blog/gpt-5)
+
+---
+
+## 新闻列表
 {articles_text}
 
-请生成今日 AI 新闻摘要（使用简体中文）："""
+请按照上述格式生成新闻摘要（使用简体中文，所有链接必须完整可点击）：
+"""
 
     try:
         print("正在使用 AI 生成新闻摘要...")
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=[
-                {"role": "system", "content": "你是一位专业的 AI 行业分析师，擅长从大量信息中提取关键要点并生成结构化的新闻摘要。"},
+                {"role": "system", "content": "你是一位专业的 AI 行业分析师。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=3000
         )
-        
         summary = response.choices[0].message.content
         print("✅ 摘要生成成功")
         return summary
-        
     except Exception as e:
-        print(f"❌ 生成摘要时出错: {type(e).__name__}: {str(e)}")
+        print(f"❌ 生成摘要时出错: {e}")
         return None
 
 def generate_markdown_report(summary, articles, output_file=None, duplicate_count=0):
